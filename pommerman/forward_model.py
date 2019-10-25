@@ -570,6 +570,85 @@ class ForwardModel(object):
 
         return observations
 
+    def get_state(self, curr_board, agents, bombs, flames,
+                         is_partially_observable, agent_view_size):
+        """
+        取全局数据
+        """
+        is_partially_observable = False
+        board_size = len(curr_board)
+
+        def make_bomb_maps(position):
+            ''' Makes an array of an agents bombs and the bombs attributes '''
+            blast_strengths = np.zeros((board_size, board_size))
+            life = np.zeros((board_size, board_size))
+            moving_direction = np.zeros((board_size, board_size))
+
+            for bomb in bombs:
+                x, y = bomb.position
+                if not is_partially_observable \
+                   or in_view_range(position, x, y):
+                    blast_strengths[(x, y)] = bomb.blast_strength
+                    life[(x, y)] = bomb.life
+                    if bomb.moving_direction is not None:
+                        moving_direction[(x, y)] = bomb.moving_direction.value
+            return blast_strengths, life, moving_direction
+
+        def make_flame_map(position):
+            ''' Makes an array of an agents flame life'''
+            life = np.zeros((board_size, board_size))
+
+            for flame in flames:
+                x, y = flame.position
+                if not is_partially_observable \
+                   or in_view_range(position, x, y):
+                    # +1 needed because flame removal check is done
+                    # before flame is ticked down, i.e. flame life
+                    # in environment is 2 -> 1 -> 0 -> dead
+                    life[(x, y)] = flame.life + 1
+            return life
+
+        def in_view_range(position, v_row, v_col):
+            '''Checks to see if a tile is in an agents viewing area'''
+            row, col = position
+            return all([
+                row >= v_row - agent_view_size, row <= v_row + agent_view_size,
+                col >= v_col - agent_view_size, col <= v_col + agent_view_size
+            ])
+
+        attrs = [
+            'position', 'blast_strength', 'can_kick', 'teammate', 'ammo',
+            'enemies'
+        ]
+        alive_agents = [
+            utility.agent_value(agent.agent_id)
+            for agent in agents
+            if agent.is_alive
+        ]
+
+        # 全局 state:
+        state = {'alive': alive_agents}
+        state['board'] = curr_board
+
+        bomb_blast_strengths, bomb_life, bomb_moving_direction = make_bomb_maps(agents[0].position)
+        state['bomb_blast_strength'] = bomb_blast_strengths
+        state['bomb_life'] = bomb_life
+        state['bomb_moving_direction'] = bomb_moving_direction
+
+        flame_life = make_flame_map(agents[0].position)
+        state['flame_life'] = flame_life
+
+        agents_attrs = []
+        for agent in agents:
+            attrs_dict = {}
+            for attr in attrs:
+                assert hasattr(agent, attr)
+                attrs_dict[attr] = getattr(agent, attr)
+            agents_attrs.append(attrs_dict)
+        state['agents_attrs'] = agents_attrs
+
+        return state
+
     @staticmethod
     def get_done(agents, step_count, max_steps, game_type, training_agent):
         alive = [agent for agent in agents if agent.is_alive]

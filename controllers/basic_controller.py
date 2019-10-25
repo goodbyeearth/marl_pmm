@@ -19,7 +19,7 @@ class BasicMAC:
     def select_actions(self, ep_batch, t_ep, t_env, bs=slice(None), test_mode=False):
         # Only select actions for the selected batch elements in bs
         avail_actions = ep_batch["avail_actions"][:, t_ep]   # 当前回合的最后一步，即第 t_ep 步
-        agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)
+        agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)  # 得到所有agent的动作
         chosen_actions = self.action_selector.select_action(agent_outputs[bs], avail_actions[bs], t_env, test_mode=test_mode)
         return chosen_actions
 
@@ -74,6 +74,7 @@ class BasicMAC:
     def _build_agents(self, input_shape):
         self.agent = agent_REGISTRY[self.args.agent](input_shape, self.args)
 
+    # todo：这里假设智能体是同类的
     def _build_inputs(self, batch, t):
         # Assumes homogenous agents with flat observations.
         # Other MACs might want to e.g. delegate building inputs to each agent

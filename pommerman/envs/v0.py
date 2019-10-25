@@ -145,6 +145,13 @@ class Pomme(gym.Env):
             obs['step_count'] = self._step_count
         return self.observations
 
+    def get_state(self):
+        self.state = self.model.get_state(
+            self._board, self._agents, self._bombs, self._flames,
+            False, self._agent_view_size)
+
+        return self.state
+
     def _get_rewards(self):
         return self.model.get_rewards(self._agents, self._game_type,
                                       self._step_count, self._max_steps)

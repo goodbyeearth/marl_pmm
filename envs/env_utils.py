@@ -10,15 +10,6 @@ def get_env_info():
     return env_info
 
 
-def get_obs(env, agent_id_list):
-    """ Returns all agent observations in a list """
-    all_agents_obs = env.get_observations()
-    my_agents_obs = []
-    for agent_id in agent_id_list:
-        my_agents_obs.append(all_agents_obs[agent_id])
-    return my_agents_obs
-
-
 def get_obs_agent(env, agent_id):
     """ Returns observation for agent_id """
     return env.get_observations()[agent_id]

@@ -26,6 +26,7 @@ class COMACritic(nn.Module):
         q = self.fc3(x)
         return q
 
+    # todo
     def _build_inputs(self, batch, t=None):
         bs = batch.batch_size
         max_t = batch.max_seq_length if t is None else 1
@@ -35,9 +36,9 @@ class COMACritic(nn.Module):
         inputs.append(batch["state"][:, ts].unsqueeze(2).repeat(1, 1, self.n_agents, 1))
 
         # observation
-        inputs.append(batch["obs"][:, ts])
+        inputs.append(batch["obs"][:, ts])    # todo：这是全部智能体还是当前智能体
 
-        # actions (masked out by agent)
+        # actions (masked out by agent)    # 去掉了当前 agent 的动作
         actions = batch["actions_onehot"][:, ts].view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)
         agent_mask = (1 - th.eye(self.n_agents, device=batch.device))
         agent_mask = agent_mask.view(-1, 1).repeat(1, self.n_actions).view(self.n_agents, -1)
