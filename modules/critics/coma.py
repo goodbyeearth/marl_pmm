@@ -36,7 +36,7 @@ class COMACritic(nn.Module):
         inputs.append(batch["state"][:, ts].unsqueeze(2).repeat(1, 1, self.n_agents, 1))
 
         # observation
-        inputs.append(batch["obs"][:, ts])    # todo：这是全部智能体还是当前智能体
+        inputs.append(batch["obs"][:, ts])    # 当前智能体
 
         # actions (masked out by agent)    # 去掉了当前 agent 的动作
         actions = batch["actions_onehot"][:, ts].view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)

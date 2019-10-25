@@ -10,7 +10,7 @@ def get_env_info():
     return env_info
 
 
-def get_obs_agent(env, agent_id):
+def get_obs(env, agent_id):
     """ Returns observation for agent_id """
     return env.get_observations()[agent_id]
 
@@ -21,7 +21,7 @@ def get_obs_size():
 
 
 def get_state(env):
-    raise NotImplementedError
+    return env.get_state()
 
 
 def get_state_size():

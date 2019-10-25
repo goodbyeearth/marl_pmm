@@ -23,16 +23,17 @@ class EpisodeBatch:
             self.data = data
         else:
             self.data = SN()
-            self.data.transition_data = {}
-            self.data.episode_data = {}
+            self.data.transition_data = {}     # 每一步的数据
+            self.data.episode_data = {}        # 回合性的数据
             self._setup_data(self.scheme, self.groups, batch_size, max_seq_length, self.preprocess)
 
     def _setup_data(self, scheme, groups, batch_size, max_seq_length, preprocess):
+        # 对每个 preprocess 里的东西做相关转换后加到 schema 中
         if preprocess is not None:
             for k in preprocess:
                 assert k in scheme
                 new_k = preprocess[k][0]    # 预处理后的键名
-                transforms = preprocess[k][1]   # 预处理后的值
+                transforms = preprocess[k][1]   # 预处理后, 是一个列表，可以包含多种
 
                 vshape = self.scheme[k]["vshape"]
                 dtype = self.scheme[k]["dtype"]
@@ -54,6 +55,7 @@ class EpisodeBatch:
             "filled": {"vshape": (1,), "dtype": th.long},
         })
 
+        # 对每个 schema 里的东西做处理
         for field_key, field_info in scheme.items():
             assert "vshape" in field_info, "Scheme must define vshape for {}".format(field_key)
             vshape = field_info["vshape"]
@@ -87,14 +89,14 @@ class EpisodeBatch:
 
     def update(self, data, bs=slice(None), ts=slice(None), mark_filled=True):
         slices = self._parse_slices((bs, ts))
-        for k, v in data.items():
-            if k in self.data.transition_data:
+        for k, v in data.items():     # 数据名，数据值
+            if k in self.data.transition_data:   # 如果是每一步的数据
                 target = self.data.transition_data
                 if mark_filled:
                     target["filled"][slices] = 1
                     mark_filled = False
                 _slices = slices
-            elif k in self.data.episode_data:
+            elif k in self.data.episode_data:    # 如果是回合性的数据
                 target = self.data.episode_data
                 _slices = slices[0]
             else:

@@ -1,5 +1,5 @@
 from envs import REGISTRY as env_REGISTRY
-from envs import env_utils
+from components import env_utils
 from functools import partial
 from components.episode_buffer import EpisodeBatch
 import numpy as np
@@ -57,9 +57,9 @@ class EpisodeRunner:
         while not terminated:
 
             pre_transition_data = {
-                "state": [env_utils.get_state(self.env)],
+                "state": [env_utils.get_state(self.env)],    # todo: 经过 featurize
                 "avail_actions": [env_utils.get_avail_actions(self.env)],
-                "obs": [env_utils.get_obs(self.env)]
+                "obs": [env_utils.get_obs(self.env)]      # todo: 经过 featurize
             }
 
             self.batch.update(pre_transition_data, ts=self.t)
