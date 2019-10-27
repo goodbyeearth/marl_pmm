@@ -1,4 +1,9 @@
 # state
+'agents_attrs': 
+[{'position': (3, 1), 'blast_strength': 2, 'can_kick': False, 'teammate': <Item.Agent2: 12>, 'ammo': 0, 'enemies': [<Item.Agent1: 11>, <Item.Agent3: 13>, <Item.AgentDummy: 9>]},
+ {'position': (9, 3), 'blast_strength': 2, 'can_kick': False, 'teammate': <Item.Agent3: 13>, 'ammo': 0, 'enemies': [<Item.Agent0: 10>, <Item.Agent2: 12>, <Item.AgentDummy: 9>]}, 
+ {'position': (9, 7), 'blast_strength': 2, 'can_kick': False, 'teammate': <Item.Agent0: 10>, 'ammo': 0, 'enemies': [<Item.Agent1: 11>, <Item.Agent3: 13>, <Item.AgentDummy: 9>]}, 
+ {'position': (1, 8), 'blast_strength': 2, 'can_kick': False, 'teammate': <Item.Agent1: 11>, 'ammo': 1, 'enemies': [<Item.Agent0: 10>, <Item.Agent2: 12>, <Item.AgentDummy: 9>]}]
 ```
 # 全局 state:
 state = {'alive': alive_agents}
