@@ -61,10 +61,10 @@ class EpisodeRunner:
         while not terminated:
             state = env_utils.get_state(self.env)
             board_state = to_board_state(state, self.train_idx_list)
-            flat_state = to_flat_state(state)
+            flat_state = to_flat_state(state, self.train_idx_list)
 
             obs_list = env_utils.get_agent_obs(self.env, self.train_idx_list)   # 包含了两个本方智能体 obs 的列表
-            board_obs_list = to_board_obs(obs_list, )
+            board_obs_list = to_board_obs(obs_list)
             flat_obs_list = to_flat_obs(obs_list)
 
             pre_transition_data = {
@@ -82,6 +82,7 @@ class EpisodeRunner:
             agent_actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
 
             # todo: action 加信息
+            # todo: 死了的话动作处理
             # 替换 all_actions 中我方智能体的动作
             all_obs = env_utils.get_all_obs(self.env)
             all_actions = env_utils.get_all_agent_actions(self.env, all_obs)
@@ -91,6 +92,7 @@ class EpisodeRunner:
 
             next_obs_list, reward_list, terminated, env_info = self.env.step(all_actions)   # 传入动作列表
 
+            # todo: 死了的话 reward 要处理
             # 处理 reward，取得我方智能体的 reward
             one_of_train_idx = self.train_idx_list[0]
             reward = reward_list[one_of_train_idx]
