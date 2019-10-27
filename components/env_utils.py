@@ -1,32 +1,52 @@
+from components import featurize
+
 episode_limit = 1000
 n_agent = 2
 
+
 def get_env_info():
-    env_info = {"state_shape": get_state_size(),
-                "obs_shape": get_obs_size(),
+    env_info = {"board_state_shape": get_board_state_size(),
+                "flat_state_shape": get_flat_state_size(),
+                "board_obs_shape": get_board_obs_size(),
+                "flat_obs_shape": get_flat_obs_size(),
                 "n_actions": get_total_actions(),
                 "n_agents": n_agent,
                 "episode_limit": episode_limit}
     return env_info
 
 
-def get_obs(env, agent_id):
-    """ Returns observation for agent_id """
-    return env.get_observations()[agent_id]
-
-
-def get_obs_size():
-    """ Returns the shape of the observation """
-    raise NotImplementedError
-
-
 def get_state(env):
     return env.get_state()
 
 
-def get_state_size():
-    """ Returns the shape of the state"""
-    raise NotImplementedError
+# 得到训练的所有智能体的 obs
+def get_agent_obs(env, train_idx_list):
+    agent_obs = []
+    all_obs = env.get_observations()
+    for train_idx in train_idx_list:
+        agent_obs.append(all_obs[train_idx])
+    return agent_obs
+
+
+# 包括敌方在内的所有 obs
+def get_all_obs(env):
+    return env.get_observations()
+
+
+def get_board_state_size():
+    return featurize.get_board_state_size()
+
+
+def get_flat_state_size():
+    return featurize.get_flat_state_size()
+
+
+def get_board_obs_size():
+    return featurize.get_board_obs_size()
+
+
+def get_flat_obs_size():
+    return featurize.get_flat_obs_size()
 
 
 def get_avail_actions(env):
@@ -38,6 +58,10 @@ def get_avail_agent_actions(env, agent_id):
     raise NotImplementedError
 
 
+def get_all_agent_actions(env, all_obs):
+    return env.act(all_obs)
+
+
 def get_total_actions():
     """ Returns the total number of actions an agent could ever take """
     # TODO: This is only suitable for a discrete 1 dimensional action space for each agent
@@ -45,29 +69,15 @@ def get_total_actions():
 
 
 def get_stats(env):
-    pass
-    # stats = {
-    #     "battles_won": self.battles_won,
-    #     "battles_game": self.battles_game,
-    #     "battles_draw": self.timeouts,
-    #     "win_rate": self.battles_won / self.battles_game,
-    #     "timeouts": self.timeouts,
-    #     "restarts": self.force_restarts,
-    # }
-    # return stats
-
-
-# def reset():
-#     """ Returns initial observations and states"""
-#     raise NotImplementedError
-
-
-# def render(self):
-#     raise NotImplementedError
-
-
-# def close(self):
-#     raise NotImplementedError
+    stats = {
+        "battles_won": self.battles_won,
+        "battles_game": self.battles_game,
+        "battles_draw": self.timeouts,
+        "win_rate": self.battles_won / self.battles_game,
+        "timeouts": self.timeouts,
+        "restarts": self.force_restarts,
+    }
+    return stats
 
 # todo: 决定要不要保留
 # def seed(self):

@@ -2,7 +2,8 @@ from envs import REGISTRY as env_REGISTRY
 from components import env_utils
 from functools import partial
 from components.episode_buffer import EpisodeBatch
-import numpy as np
+
+from components.featurize import *
 
 
 class EpisodeRunner:
@@ -14,7 +15,10 @@ class EpisodeRunner:
         assert self.batch_size == 1
 
         self.env = env_REGISTRY[self.args.env]()
-        self.episode_limit = env_utils.get_env_info()['episode_limit']
+        self.train_idx_list = self.args.train_idx_list  # train_idx_list 第一个是第一个智能体编号，不是0就是1
+        self.episode_limit = self.args.max_step
+        self.env._max_steps = self.args.max_step
+
         self.t = 0
 
         self.t_env = 0
@@ -32,8 +36,8 @@ class EpisodeRunner:
                                  preprocess=preprocess, device=self.args.device)
         self.mac = mac
 
-    def get_env_info(self):
-        return env_utils.get_env_info()
+    # def get_env_info(self):
+    #     return env_utils.get_env_info()
 
     # todo:决定要不要保留
     # def save_replay(self):
@@ -55,42 +59,76 @@ class EpisodeRunner:
         self.mac.init_hidden(batch_size=self.batch_size)
 
         while not terminated:
+            state = env_utils.get_state(self.env)
+            board_state = to_board_state(state, self.train_idx_list)
+            flat_state = to_flat_state(state)
+
+            obs_list = env_utils.get_agent_obs(self.env, self.train_idx_list)   # 包含了两个本方智能体 obs 的列表
+            board_obs_list = to_board_obs(obs_list, )
+            flat_obs_list = to_flat_obs(obs_list)
 
             pre_transition_data = {
-                "state": [env_utils.get_state(self.env)],    # todo: 经过 featurize
+                "board_state": [board_state],
+                "flat_state": [flat_state],
                 "avail_actions": [env_utils.get_avail_actions(self.env)],
-                "obs": [env_utils.get_obs(self.env)]      # todo: 经过 featurize
+                "board_obs": [board_obs_list],
+                "flat_obs": [flat_obs_list]
             }
 
             self.batch.update(pre_transition_data, ts=self.t)
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
-            actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+            agent_actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
 
-            reward, terminated, env_info = self.env.step(actions[0])
+            # todo: action 加信息
+            # 替换 all_actions 中我方智能体的动作
+            all_obs = env_utils.get_all_obs(self.env)
+            all_actions = env_utils.get_all_agent_actions(self.env, all_obs)
+            for train_idx, agent_idx in zip(self.train_idx_list, range(len(self.train_idx_list))):
+                one_of_action = agent_actions[0][agent_idx]     # 之所以第一个所以是零，是为了将形如[[1,2,3,4]]的输出剥出来
+                all_actions[train_idx] = one_of_action
+
+            next_obs_list, reward_list, terminated, env_info = self.env.step(all_actions)   # 传入动作列表
+
+            # 处理 reward，取得我方智能体的 reward
+            one_of_train_idx = self.train_idx_list[0]
+            reward = reward_list[one_of_train_idx]
             episode_return += reward
 
+            # 处理 terminated
+            if next_obs_list[0]['step_count'] > self.episode_limit:
+                terminated = True
+
             post_transition_data = {
-                "actions": actions,
+                "actions": agent_actions,
                 "reward": [(reward,)],
-                "terminated": [(terminated != env_info.get("episode_limit", False),)],
+                "terminated": [(terminated,)],
             }
 
             self.batch.update(post_transition_data, ts=self.t)
 
             self.t += 1
 
+        # 最后一步的数据
+        state = env_utils.get_state(self.env)
+        board_state = to_board_state(state)
+        flat_state = to_flat_state(state)
+        obs_list = env_utils.get_agent_obs(self.env, self.train_idx_list)  # 包含了两个本方智能体 obs 的列表
+        board_obs_list = to_board_obs(obs_list)
+        flat_obs_list = to_flat_obs(obs_list)
         last_data = {
-            "state": [env_utils.get_state(self.env)],
+            "board_state": [board_state],
+            "flat_state": [flat_state],
             "avail_actions": [env_utils.get_avail_actions(self.env)],
-            "obs": [env_utils.get_obs(self.env)]
+            "board_obs": [board_obs_list],
+            "flat_obs": [flat_obs_list]
         }
         self.batch.update(last_data, ts=self.t)
 
         # Select actions in the last stored state
-        actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
-        self.batch.update({"actions": actions}, ts=self.t)
+        agent_actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
+        self.batch.update({"actions": agent_actions}, ts=self.t)
 
         cur_stats = self.test_stats if test_mode else self.train_stats
         cur_returns = self.test_returns if test_mode else self.train_returns

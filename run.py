@@ -83,13 +83,15 @@ def run_sequential(args, logger):
     """agent数量，动作数，state shape"""
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
-    args.state_shape = env_info["state_shape"]
+    args.state_shape = env_info["state_shape"]  # todo 修改
 
     # Default/Base scheme
     """设置变量的形状等信息"""
     scheme = {
-        "state": {"vshape": env_info["state_shape"]},
-        "obs": {"vshape": env_info["obs_shape"], "group": "agents"},
+        "board_state": {"vshape": env_info["board_state_shape"]},
+        "flat_state": {"vshape": env_info["flat_state_shape"]},
+        "board_obs": {"vshape": env_info["board_obs_shape"], "group": "agents"},
+        "flat_obs": {"vshape": env_info["flat_obs_shape"], "group": "agents"},
         "actions": {"vshape": (1,), "group": "agents", "dtype": th.long},
         "avail_actions": {"vshape": (env_info["n_actions"],), "group": "agents", "dtype": th.int},
         "reward": {"vshape": (1,)},
@@ -99,7 +101,6 @@ def run_sequential(args, logger):
         "agents": args.n_agents
     }
     preprocess = {
-        # todo: obs预处理
         "actions": ("actions_onehot", [OneHot(out_dim=args.n_actions)])
     }
 

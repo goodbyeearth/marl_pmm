@@ -31,17 +31,19 @@ class BasicMAC:
         # Softmax the agent outputs if they're policy logits
         if self.agent_output_type == "pi_logits":
 
-            if getattr(self.args, "mask_before_softmax", True):
+            if getattr(self.args, "mask_before_softmax", True):     # todo: 设置该参数
                 # Make the logits for unavailable actions very negative to minimise their affect on the softmax
                 reshaped_avail_actions = avail_actions.reshape(ep_batch.batch_size * self.n_agents, -1)
                 agent_outs[reshaped_avail_actions == 0] = -1e10
 
             agent_outs = th.nn.functional.softmax(agent_outs, dim=-1)
             if not test_mode:
+                # 统计了动作数目
                 # Epsilon floor
                 epsilon_action_num = agent_outs.size(-1)
                 if getattr(self.args, "mask_before_softmax", True):
                     # With probability epsilon, we will pick an available action uniformly
+                    # 只统计可选动作数目
                     epsilon_action_num = reshaped_avail_actions.sum(dim=1, keepdim=True).float()
 
                 agent_outs = ((1 - self.action_selector.epsilon) * agent_outs
@@ -87,6 +89,7 @@ class BasicMAC:
             else:
                 inputs.append(batch["actions_onehot"][:, t-1])
         if self.args.obs_agent_id:
+            # 如果obs_agent_id为true，对智能体编号进行 onehot 后加入 input
             inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
 
         inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
