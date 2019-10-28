@@ -59,7 +59,7 @@ class EpisodeRunner:
         self.mac.init_hidden(batch_size=self.batch_size)
 
         while not terminated:
-            state = env_utils.get_state(self.env)
+            state = self.env.get_state()
             board_state = to_board_state(state, self.train_idx_list)
             flat_state = to_flat_state(state, self.train_idx_list)
 
@@ -67,13 +67,17 @@ class EpisodeRunner:
             board_obs_list = to_board_obs(obs_list)
             flat_obs_list = to_flat_obs(obs_list)
 
+            avail_actions = env_utils.get_avail_actions(obs_list, self.train_idx_list)
+
             pre_transition_data = {
                 "board_state": [board_state],
                 "flat_state": [flat_state],
-                "avail_actions": [env_utils.get_avail_actions(self.env)],
+                "avail_actions": [avail_actions],
                 "board_obs": [board_obs_list],
                 "flat_obs": [flat_obs_list]
             }
+            # print('shape1:',board_state.shape)
+            # print('shape2:', board_obs_list[0].shape)
 
             self.batch.update(pre_transition_data, ts=self.t)
 
@@ -113,16 +117,17 @@ class EpisodeRunner:
             self.t += 1
 
         # 最后一步的数据
-        state = env_utils.get_state(self.env)
-        board_state = to_board_state(state)
-        flat_state = to_flat_state(state)
+        state = self.env.get_state()
+        board_state = to_board_state(state, self.train_idx_list)
+        flat_state = to_flat_state(state, self.train_idx_list)
         obs_list = env_utils.get_agent_obs(self.env, self.train_idx_list)  # 包含了两个本方智能体 obs 的列表
         board_obs_list = to_board_obs(obs_list)
         flat_obs_list = to_flat_obs(obs_list)
+        avail_actions = env_utils.get_avail_actions(obs_list, self.train_idx_list)
         last_data = {
             "board_state": [board_state],
             "flat_state": [flat_state],
-            "avail_actions": [env_utils.get_avail_actions(self.env)],
+            "avail_actions": [avail_actions],
             "board_obs": [board_obs_list],
             "flat_obs": [flat_obs_list]
         }

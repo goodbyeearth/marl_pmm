@@ -76,30 +76,47 @@ class BasicMAC:
     def _build_agents(self, input_shape):
         self.agent = agent_REGISTRY[self.args.agent](input_shape, self.args)
 
-    # todo：这里假设智能体是同类的
     def _build_inputs(self, batch, t):
         # Assumes homogenous agents with flat observations.
         # Other MACs might want to e.g. delegate building inputs to each agent
         bs = batch.batch_size
-        inputs = []
-        inputs.append(batch["obs"][:, t])  # b1av
+        inputs = {'board_inputs': batch["obs"][:, t], 'flat_inputs': []}
         if self.args.obs_last_action:
             if t == 0:
-                inputs.append(th.zeros_like(batch["actions_onehot"][:, t]))
+                inputs['flat_inputs'].append(th.zeros_like(batch["actions_onehot"][:, t]))
             else:
-                inputs.append(batch["actions_onehot"][:, t-1])
+                inputs['flat_inputs'].append(batch["actions_onehot"][:, t-1])
         if self.args.obs_agent_id:
             # 如果obs_agent_id为true，对智能体编号进行 onehot 后加入 input
-            inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
+            inputs['flat_inputs'].append(
+                th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1)   # 得到 2 维数组
+            )
 
-        inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
+        # 得到 2 维数组，第一维是样本编号，一个样本编号代表一个智能体一步的特征
+        inputs['flat_inputs'] = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs['flat_inputs']], dim=1)
         return inputs
+        # inputs = []
+        # inputs.append(batch["obs"][:, t])  # b1av
+        # if self.args.obs_last_action:
+        #     if t == 0:
+        #         inputs.append(th.zeros_like(batch["actions_onehot"][:, t]))
+        #     else:
+        #         inputs.append(batch["actions_onehot"][:, t-1])
+        # if self.args.obs_agent_id:
+        #     # 如果obs_agent_id为true，对智能体编号进行 onehot 后加入 input
+        #     inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
+        #
+        # inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
+        # return inputs
 
     def _get_input_shape(self, scheme):
-        input_shape = scheme["obs"]["vshape"]
+        input_shape = {
+            'board_shape': scheme['board_obs']['vshape'],
+            'flat_shape': scheme["flat_obs"]["vshape"],
+        }
         if self.args.obs_last_action:
-            input_shape += scheme["actions_onehot"]["vshape"][0]
+            input_shape['flat_shape'] += scheme["actions_onehot"]["vshape"][0]
         if self.args.obs_agent_id:
-            input_shape += self.n_agents
+            input_shape['flat_shape'] += self.n_agents
 
         return input_shape

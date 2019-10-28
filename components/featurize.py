@@ -339,7 +339,7 @@ def get_board_obs_size():
 def to_flat_obs(obs_list):
     flat_obs_list = []
     for obs in obs_list:
-        flat_obs_list.append(to_agent_board_obs(obs))
+        flat_obs_list.append(to_agent_flat_obs(obs))
     return flat_obs_list
 
 

@@ -15,10 +15,6 @@ def get_env_info():
     return env_info
 
 
-def get_state(env):
-    return env.get_state()
-
-
 # 得到训练的所有智能体的 obs
 def get_agent_obs(env, train_idx_list):
     agent_obs = []
@@ -49,13 +45,22 @@ def get_flat_obs_size():
     return featurize.get_flat_obs_size()
 
 
-def get_avail_actions(env):
-    raise NotImplementedError
+def get_avail_actions(obs_list, train_list):
+    avail_actions = []
+    for agent_idx, obs in zip(train_list, obs_list):
+        avail_actions.append(get_avail_agent_actions(obs, agent_idx))
+    return avail_actions
 
 
-def get_avail_agent_actions(env, agent_id):
+# todo: board 物体、火焰、能不能踢等
+def get_avail_agent_actions(obs, agent_id):
     """ Returns the available actions for agent_id """
-    raise NotImplementedError
+    avail_agent_actions = [1] * 6
+    if obs['ammo'] == 0:
+        avail_agent_actions[5] = 0      # 不能放炸弹
+    for action in [1, 2, 3, 4]:         # 上下左右
+        avail_agent_actions[action] = check_move(obs, action)
+    return avail_agent_actions
 
 
 def get_all_agent_actions(env, all_obs):
@@ -64,20 +69,45 @@ def get_all_agent_actions(env, all_obs):
 
 def get_total_actions():
     """ Returns the total number of actions an agent could ever take """
-    # TODO: This is only suitable for a discrete 1 dimensional action space for each agent
-    raise NotImplementedError
+    return 6
 
 
 def get_stats(env):
     stats = {
-        "battles_won": self.battles_won,
-        "battles_game": self.battles_game,
-        "battles_draw": self.timeouts,
-        "win_rate": self.battles_won / self.battles_game,
-        "timeouts": self.timeouts,
-        "restarts": self.force_restarts,
+        # "battles_won": self.battles_won,
+        # "battles_game": self.battles_game,
+        # "battles_draw": self.timeouts,
+        # "win_rate": self.battles_won / self.battles_game,
+        # "timeouts": self.timeouts,
+        # "restarts": self.force_restarts,
     }
     return stats
+
+
+def check_move(obs, move):
+    curr_pos = obs['position']
+    if move == 1:
+        next_pos_0 = curr_pos[0] - 1
+        next_pos_1 = curr_pos[1]
+    elif move == 2:
+        next_pos_0 = curr_pos[0] + 1
+        next_pos_1 = curr_pos[1]
+    elif move == 3:
+        next_pos_0 = curr_pos[0]
+        next_pos_1 = curr_pos[1] - 1
+    elif move == 4:
+        next_pos_0 = curr_pos[0]
+        next_pos_1 = curr_pos[1] + 1
+    else:
+        raise ValueError
+    # 墙、木墙、边界
+    if obs['board'][(next_pos_0, next_pos_1)] in [1, 2] \
+            or next_pos_0 < 0 or next_pos_0 > 10 \
+            or next_pos_1 < 0 or next_pos_1 > 1:      #
+        return 0
+    else:
+        return 1
+
 
 # todo: 决定要不要保留
 # def seed(self):

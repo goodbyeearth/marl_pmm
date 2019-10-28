@@ -14,6 +14,7 @@ from runners import REGISTRY as r_REGISTRY
 from controllers import REGISTRY as mac_REGISTRY
 from components.episode_buffer import ReplayBuffer
 from components.transforms import OneHot
+from components import env_utils
 
 
 def run(_run, _config, _log):
@@ -79,11 +80,11 @@ def run_sequential(args, logger):
     runner = r_REGISTRY[args.runner](args=args, logger=logger)
 
     # Set up schemes and groups here
-    env_info = runner.get_env_info()
+    env_info = env_utils.get_env_info()
     """agent数量，动作数，state shape"""
     args.n_agents = env_info["n_agents"]
     args.n_actions = env_info["n_actions"]
-    args.state_shape = env_info["state_shape"]  # todo 修改
+    args.board_state_shape = env_info["board_state_shape"]
 
     # Default/Base scheme
     """设置变量的形状等信息"""

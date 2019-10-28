@@ -62,7 +62,7 @@ class EpisodeBatch:
             episode_const = field_info.get("episode_const", False)
             group = field_info.get("group", None)
             dtype = field_info.get("dtype", th.float32)
-
+            # print(field_key, ' shape:', vshape)
             if isinstance(vshape, int):
                 vshape = (vshape,)
 
@@ -104,6 +104,10 @@ class EpisodeBatch:
 
             dtype = self.scheme[k].get("dtype", th.float32)
             v = th.tensor(v, dtype=dtype, device=self.device)
+            # print(k)
+            # print(target[k][_slices].shape)
+            # print(v.shape)
+            # print('----------------------')
             self._check_safe_view(v, target[k][_slices])
             target[k][_slices] = v.view_as(target[k][_slices])
 
