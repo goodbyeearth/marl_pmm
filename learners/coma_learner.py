@@ -100,6 +100,8 @@ class COMALearner:
     def _train_critic(self, batch, rewards, terminated, actions, avail_actions, mask, bs, max_t):
         # Optimise critic
         target_q_vals = self.target_critic(batch)[:, :]
+        # print(target_q_vals)
+        # print(target_q_vals.shape)
         targets_taken = th.gather(target_q_vals, dim=3, index=actions).squeeze(3)
 
         # Calculate td-lambda targets

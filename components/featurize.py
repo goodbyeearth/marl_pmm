@@ -394,8 +394,11 @@ def to_agent_flat_obs(obs):
     else:
         num_enemy_in_view[0] = 1        # 视野里敌人数量为0
 
+    # flat_obs = tm_alive + en_alive + me_alive + blast_strength + can_kick + ammo + step_count + num_enemy_in_view
+
     flat_obs = np.concatenate((tm_alive, en_alive, me_alive, blast_strength,
                                can_kick, ammo, step_count, num_enemy_in_view))
+    # print(flat_obs)
     return flat_obs
 
 

@@ -84,16 +84,17 @@ class EpisodeRunner:
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
             agent_actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
-
+            # print(agent_actions)
             # todo: action 加信息
             # todo: 死了的话动作处理
             # 替换 all_actions 中我方智能体的动作
             all_obs = env_utils.get_all_obs(self.env)
             all_actions = env_utils.get_all_agent_actions(self.env, all_obs)
             for train_idx, agent_idx in zip(self.train_idx_list, range(len(self.train_idx_list))):
-                one_of_action = agent_actions[0][agent_idx]     # 之所以第一个所以是零，是为了将形如[[1,2,3,4]]的输出剥出来
+                one_of_action = agent_actions[0][agent_idx].item()    # 之所以第一个所以是零，是为了将形如[[1,2,3,4]]的输出剥出来
                 all_actions[train_idx] = one_of_action
 
+            # print(all_actions)
             next_obs_list, reward_list, terminated, env_info = self.env.step(all_actions)   # 传入动作列表
 
             # todo: 死了的话 reward 要处理
@@ -115,7 +116,7 @@ class EpisodeRunner:
             self.batch.update(post_transition_data, ts=self.t)
 
             self.t += 1
-
+        # print('time_step:', self.t)
         # 最后一步的数据
         state = self.env.get_state()
         board_state = to_board_state(state, self.train_idx_list)
@@ -136,11 +137,10 @@ class EpisodeRunner:
         # Select actions in the last stored state
         agent_actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
         self.batch.update({"actions": agent_actions}, ts=self.t)
-
         cur_stats = self.test_stats if test_mode else self.train_stats
         cur_returns = self.test_returns if test_mode else self.train_returns
         log_prefix = "test_" if test_mode else ""
-        cur_stats.update({k: cur_stats.get(k, 0) + env_info.get(k, 0) for k in set(cur_stats) | set(env_info)})
+        # cur_stats.update({k: cur_stats.get(k, 0) + env_info.get(k, 0) for k in set(cur_stats) | set(env_info)})
         cur_stats["n_episodes"] = 1 + cur_stats.get("n_episodes", 0)
         cur_stats["ep_length"] = self.t + cur_stats.get("ep_length", 0)
 

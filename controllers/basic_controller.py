@@ -80,7 +80,12 @@ class BasicMAC:
         # Assumes homogenous agents with flat observations.
         # Other MACs might want to e.g. delegate building inputs to each agent
         bs = batch.batch_size
-        inputs = {'board_inputs': batch["obs"][:, t], 'flat_inputs': []}
+
+        board_obs = batch['board_obs'][:, t].reshape((bs*self.n_agents, ) + batch['board_obs'][:, t].shape[2:])
+        # print('board_obs.shape', board_obs.shape)
+
+        inputs = {'board_inputs': board_obs, 'flat_inputs': [batch['flat_obs'][:, t]]}
+
         if self.args.obs_last_action:
             if t == 0:
                 inputs['flat_inputs'].append(th.zeros_like(batch["actions_onehot"][:, t]))
@@ -91,23 +96,15 @@ class BasicMAC:
             inputs['flat_inputs'].append(
                 th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1)   # 得到 2 维数组
             )
+        # print('flat_input[0]: ', inputs['flat_inputs'][0].shape)
+        # print('flat_input[1]: ', inputs['flat_inputs'][1].shape)
+        # print('flat_input[2]: ', inputs['flat_inputs'][2].shape)
 
         # 得到 2 维数组，第一维是样本编号，一个样本编号代表一个智能体一步的特征
         inputs['flat_inputs'] = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs['flat_inputs']], dim=1)
+        # print('final shape: ', inputs['flat_inputs'].shape)
+        # print(inputs['flat_inputs'].shape)
         return inputs
-        # inputs = []
-        # inputs.append(batch["obs"][:, t])  # b1av
-        # if self.args.obs_last_action:
-        #     if t == 0:
-        #         inputs.append(th.zeros_like(batch["actions_onehot"][:, t]))
-        #     else:
-        #         inputs.append(batch["actions_onehot"][:, t-1])
-        # if self.args.obs_agent_id:
-        #     # 如果obs_agent_id为true，对智能体编号进行 onehot 后加入 input
-        #     inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1))
-        #
-        # inputs = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs], dim=1)
-        # return inputs
 
     def _get_input_shape(self, scheme):
         input_shape = {

@@ -7,10 +7,10 @@ def get_env_fn():
         agent_list = [
             agents.SimpleAgent(),
             # agents.RandomAgent(),
-            agents.BaseAgent(),
             agents.SimpleAgent(),
-            # agents.SimpleAgent()
-            agents.RandomAgent(),
+            agents.SimpleAgent(),
+            agents.SimpleAgent()
+            # agents.RandomAgent(),
         ]
         env = pommerman.make("PommeRadioCompetition-v2", agent_list)
         return env

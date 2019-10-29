@@ -25,6 +25,7 @@ class PmmAgent(nn.Module):
         board_obs = board_obs.view(board_obs.size(0), -1)    # 展开成 (x.size(0), x.size(1)*x.size(2)*x.size(3))
 
         obs = th.cat([board_obs, inputs['flat_inputs']], dim=1)
+        # print(obs.shape)
         obs = F.relu(self.fc1(obs))
         h_in = hidden_state.reshape(-1, self.args.rnn_hidden_dim)
         h = self.rnn(obs, h_in)
