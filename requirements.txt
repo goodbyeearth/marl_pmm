@@ -57,7 +57,7 @@ PySC2==3.0.0
 pytest==3.8.2
 python-dateutil==2.7.3
 python-rapidjson==0.6.3
-PyYAML==3.13
+PyYAML==5.1
 rapidjson==1.0.0
 requests==2.19.1
 ruamel.yaml==0.16.5
