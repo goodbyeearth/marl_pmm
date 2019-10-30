@@ -6,11 +6,11 @@ epsilon_finish: .01
 epsilon_anneal_time: 100000
 mask_before_softmax: False
 
-runner: "parallel"
+runner: "episode"
 
-buffer_size: 8
-batch_size_run: 8
-batch_size: 8
+batch_size_run: 1 # Number of environments to run in parallel
+buffer_size: 1
+batch_size: 1
 
 env_args:
   state_last_action: False # critic adds last action internally
@@ -31,4 +31,4 @@ critic_train_mode: "seq"
 critic_train_reps: 1
 q_nstep: 0  # 0 corresponds to default Q, 1 is r + gamma*Q, etc
 
-name: "coma_smac"
+name: "coma_pmm"

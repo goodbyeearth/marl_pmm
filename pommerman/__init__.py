@@ -10,7 +10,7 @@ from . import utility
 from . import network
 
 gym.logger.set_level(40)
-REGISTRY = None
+REGISTR1Y = None
 
 
 def _register():

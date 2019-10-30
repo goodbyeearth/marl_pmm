@@ -17,7 +17,7 @@ class EpisodeRunner:
         self.env = env_REGISTRY[self.args.env]()
         self.train_idx_list = self.args.train_idx_list  # train_idx_list 第一个是第一个智能体编号，不是0就是1
         self.episode_limit = self.args.max_step
-        self.env._max_steps = self.args.max_step
+        self.env._max_steps = self.args.max_step-1
 
         self.t = 0
 
@@ -104,8 +104,8 @@ class EpisodeRunner:
             episode_return += reward
 
             # 处理 terminated
-            if next_obs_list[0]['step_count'] > self.episode_limit:
-                terminated = True
+            # if next_obs_list[0]['step_count'] >= self.episode_limit:
+            #     terminated = True
 
             post_transition_data = {
                 "actions": agent_actions,
@@ -118,9 +118,12 @@ class EpisodeRunner:
             self.t += 1
         # print('time_step:', self.t)
         # 最后一步的数据
+        print("next_obs_list[0]['step_count']", next_obs_list[0]['step_count'])
+        # print(self.batch['flat_obs'].shape)
         state = self.env.get_state()
         board_state = to_board_state(state, self.train_idx_list)
         flat_state = to_flat_state(state, self.train_idx_list)
+        # print('raw state:', state)
         obs_list = env_utils.get_agent_obs(self.env, self.train_idx_list)  # 包含了两个本方智能体 obs 的列表
         board_obs_list = to_board_obs(obs_list)
         flat_obs_list = to_flat_obs(obs_list)

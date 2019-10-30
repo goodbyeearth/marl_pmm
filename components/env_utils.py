@@ -1,17 +1,16 @@
 from components import featurize
 
-episode_limit = 1000
 n_agent = 2
 
 
-def get_env_info():
+def get_env_info(args):
     env_info = {"board_state_shape": get_board_state_size(),
                 "flat_state_shape": get_flat_state_size(),
                 "board_obs_shape": get_board_obs_size(),
                 "flat_obs_shape": get_flat_obs_size(),
                 "n_actions": get_total_actions(),
                 "n_agents": n_agent,
-                "episode_limit": episode_limit}
+                "episode_limit": args.max_step}
     return env_info
 
 
@@ -101,9 +100,9 @@ def check_move(obs, move):
     else:
         raise ValueError
     # 墙、木墙、边界
-    if obs['board'][(next_pos_0, next_pos_1)] in [1, 2] \
-            or next_pos_0 < 0 or next_pos_0 > 10 \
-            or next_pos_1 < 0 or next_pos_1 > 1:      #
+    if next_pos_1 < 0 or next_pos_1 > 10 or \
+            next_pos_0 < 0 or next_pos_0 > 10 or \
+            obs['board'][(next_pos_0, next_pos_1)] in [1, 2]:
         return 0
     else:
         return 1
