@@ -44,15 +44,15 @@ def get_flat_obs_size():
     return featurize.get_flat_obs_size()
 
 
-def get_avail_actions(obs_list, train_list):
+def get_avail_actions(obs_list):
     avail_actions = []
-    for agent_idx, obs in zip(train_list, obs_list):
-        avail_actions.append(get_avail_agent_actions(obs, agent_idx))
+    for obs in obs_list:
+        avail_actions.append(get_avail_agent_actions(obs))
     return avail_actions
 
 
 # todo: board 物体、火焰、能不能踢等
-def get_avail_agent_actions(obs, agent_id):
+def get_avail_agent_actions(obs):
     """ Returns the available actions for agent_id """
     avail_agent_actions = [1] * 6
     if obs['ammo'] == 0:

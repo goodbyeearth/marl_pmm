@@ -67,7 +67,7 @@ class EpisodeRunner:
             board_obs_list = to_board_obs(obs_list)
             flat_obs_list = to_flat_obs(obs_list)
 
-            avail_actions = env_utils.get_avail_actions(obs_list, self.train_idx_list)
+            avail_actions = env_utils.get_avail_actions(obs_list)
 
             pre_transition_data = {
                 "board_state": [board_state],
@@ -118,7 +118,7 @@ class EpisodeRunner:
             self.t += 1
         # print('time_step:', self.t)
         # 最后一步的数据
-        print("next_obs_list[0]['step_count']", next_obs_list[0]['step_count'])
+        # print("next_obs_list[0]['step_count']", next_obs_list[0]['step_count'])
         # print(self.batch['flat_obs'].shape)
         state = self.env.get_state()
         board_state = to_board_state(state, self.train_idx_list)
@@ -127,7 +127,7 @@ class EpisodeRunner:
         obs_list = env_utils.get_agent_obs(self.env, self.train_idx_list)  # 包含了两个本方智能体 obs 的列表
         board_obs_list = to_board_obs(obs_list)
         flat_obs_list = to_flat_obs(obs_list)
-        avail_actions = env_utils.get_avail_actions(obs_list, self.train_idx_list)
+        avail_actions = env_utils.get_avail_actions(obs_list)
         last_data = {
             "board_state": [board_state],
             "flat_state": [flat_state],

@@ -8,9 +8,9 @@ mask_before_softmax: False
 
 runner: "parallel"
 
-batch_size_run: 12 # Number of environments to run in parallel
-buffer_size: 12
-batch_size: 12
+batch_size_run: 8 # Number of environments to run in parallel
+buffer_size: 8
+batch_size: 8
 
 env_args:
   state_last_action: False # critic adds last action internally

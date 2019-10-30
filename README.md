@@ -1,3 +1,6 @@
+# run
+```python main.py --config=parallel_coma --env-config=pmm```
+
 # state
 'agents_attrs': 
 [{'position': (3, 1), 'blast_strength': 2, 'can_kick': False, 'teammate': <Item.Agent2: 12>, 'ammo': 0, 'enemies': [<Item.Agent1: 11>, <Item.Agent3: 13>, <Item.AgentDummy: 9>]},

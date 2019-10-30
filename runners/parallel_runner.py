@@ -274,7 +274,7 @@ def env_worker(remote, env_fn, train_list):
             board_obs_list = to_board_obs(obs_list)
             flat_obs_list = to_flat_obs(obs_list)
 
-            avail_actions = env_utils.get_avail_actions(obs_list, train_list)
+            avail_actions = env_utils.get_avail_actions(obs_list)
 
             reward = reward_list[train_list[0]]  # 取其中一个训练智能体的奖励返回
 
@@ -303,7 +303,7 @@ def env_worker(remote, env_fn, train_list):
             remote.send({
                 "board_state": board_state,
                 "flat_state": flat_state,
-                "avail_actions": env_utils.get_avail_actions(obs_list, train_list),
+                "avail_actions": env_utils.get_avail_actions(obs_list),
                 "board_obs": board_obs_list,
                 "flat_obs": flat_obs_list
             })
