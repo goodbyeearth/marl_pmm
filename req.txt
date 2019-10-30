@@ -80,7 +80,7 @@ torchvision==0.2.1
 tornado==5.1.1
 tqdm==4.36.1
 ui==0.1.4
-urllib3==1.23
+urllib3==1.24.2
 webencodings==0.5.1
 websocket-client==0.53.0
 websockets==6.0
