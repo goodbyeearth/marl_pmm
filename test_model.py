@@ -1,6 +1,7 @@
 import pommerman
 from pommerman import agents
 from controllers.test_controller import TestMAC
+from controllers.test_controller_see_id import TestSeeIdMAC
 import torch as th
 from components.featurize import *
 
@@ -33,8 +34,11 @@ def main():
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }
     rnn_hidden_dim = 256
-    mac = TestMAC(scheme=scheme, agent_output_type=None, rnn_hidden_dim=rnn_hidden_dim,
-                  model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-30_20-02-55/356/agent.th')
+    # TODO 改
+    mac = TestSeeIdMAC(scheme=scheme, agent_output_type="pi_logits", rnn_hidden_dim=rnn_hidden_dim,
+                  model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-31_21-57-01/15076/agent.th')
+    # mac = TestMAC(scheme=scheme, agent_output_type="pi_logits", rnn_hidden_dim=rnn_hidden_dim,
+    #                    model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-31_20-10-35/199/agent.th')
     test_idx_list = [0, 2]
 
 
@@ -44,8 +48,6 @@ def main():
         mac.last_action = [th.zeros(6), th.zeros(6)]
         mac.init_hidden(1, rnn_hidden_dim)
         done = False
-        frame = 0
-        print('env max step:', env._max_steps)
         while not done:
             actions = env.act(obs)
             for idx, agent_idx in enumerate(test_idx_list):

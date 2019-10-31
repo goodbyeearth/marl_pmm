@@ -1,6 +1,7 @@
 import copy
 from components.episode_buffer import EpisodeBatch
 from modules.critics.coma import COMACritic
+from modules.critics.coma_see_id import SeeIDCritic
 from utils.rl_utils import build_td_lambda_targets
 import torch as th
 from torch.optim import RMSprop
@@ -19,7 +20,9 @@ class COMALearner:
 
         self.log_stats_t = -self.args.learner_log_interval - 1
 
-        self.critic = COMACritic(scheme, args)
+        # self.critic = COMACritic(scheme, args)
+        self.critic = SeeIDCritic(scheme, args)    # todo 改了
+
         self.target_critic = copy.deepcopy(self.critic)
 
         self.agent_params = list(mac.parameters())

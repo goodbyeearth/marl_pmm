@@ -51,6 +51,14 @@ class EpisodeRunner:
         episode_return = 0
         self.mac.init_hidden(batch_size=self.batch_size)
 
+        """reward shaping 设置"""
+        reward_dead = [5 for _ in range(4)]
+        for i in self.train_idx_list:
+            reward_dead[i] = -1
+        reward_win = 0
+        reward_lay_bomb = 1
+        is_dead = [False for _ in range(4)]
+
         while not terminated:
             state = self.env.get_state()
             board_state = to_board_state(state, self.train_idx_list)
@@ -94,11 +102,17 @@ class EpisodeRunner:
             # 处理 reward，取得我方智能体的 reward
             one_of_train_idx = self.train_idx_list[0]
             reward = reward_list[one_of_train_idx]
-            episode_return += reward
 
-            # 处理 terminated
-            # if next_obs_list[0]['step_count'] >= self.episode_limit:
-            #     terminated = True
+            """ 进行reward shaping """
+            for i in range(4):
+                if not is_dead[i] and not self.env._agents[i].is_alive:
+                    reward += reward_dead[i]
+                    is_dead[i] = True
+            for i, j in enumerate(self.train_idx_list):
+                if obs_list[i]['ammo'] > 0 and all_actions[j] == 5:
+                    reward += reward_lay_bomb
+
+            episode_return += reward
 
             post_transition_data = {
                 "actions": agent_actions,

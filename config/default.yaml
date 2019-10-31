@@ -1,7 +1,7 @@
 # --- Defaults ---
 
 # --- pymarl options ---
-mac: "basic_mac" # Basic controller
+mac: "see_id_mac" # Basic controller
 env: "PommeRadioCompetition-v2" # Environment name
 env_args: {} # Arguments for the environment
 
@@ -20,7 +20,7 @@ max_step: 800
 # --- Logging options ---
 use_tensorboard: True # Log results to tensorboard
 save_model: True # Save the models to disk
-save_model_interval: 10000 # Save models after this many timesteps
+save_model_interval: 5000 # Save models after this many timesteps
 checkpoint_path: "" # Load a checkpoint from this path
 evaluate: False # Evaluate model for test_nepisode episodes and quit (no training)
 load_step: 0 # Load model trained on this many timesteps (0 if choose max possible)

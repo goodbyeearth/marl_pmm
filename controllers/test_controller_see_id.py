@@ -3,14 +3,14 @@ from components import env_utils, featurize
 import torch as th
 
 
-class TestMAC:
+class TestSeeIdMAC:
     def __init__(self, scheme, agent_output_type, model_load_path, rnn_hidden_dim):
         self.n_agents = 2
         # input_shape = self._get_input_shape(scheme)
         # self._build_agents(input_shape)
         self.agent_output_type = agent_output_type
         self.input_shape = self._get_input_shape(scheme)
-        self.agent = agent_REGISTRY['pmm'](self.input_shape, rnn_hidden_dim)
+        self.agent = agent_REGISTRY['see_id_agent'](self.input_shape, rnn_hidden_dim)
         self.rnn_hidden_dim = rnn_hidden_dim
         self.load_models(path=model_load_path)
         self.hidden_states = None
@@ -27,6 +27,7 @@ class TestMAC:
     def forward(self, obs, agent_idx):
         agent_inputs = self._build_inputs(obs, agent_idx)
         agent_out, self.hidden_states = self.agent(agent_inputs, self.hidden_states, self.rnn_hidden_dim)
+        print('agent_out:', agent_out)
 
         if self.agent_output_type == "pi_logits":
             # if getattr(self.args, "mask_before_softmax", True):
@@ -57,9 +58,12 @@ class TestMAC:
             raise ValueError
         inputs['flat_inputs'].append(self.last_action[k])
 
-        inputs['flat_inputs'].append(th.Tensor([1, 0]) if agent_idx == 0 or agent_idx == 1 else th.Tensor([0, 1]))
+        id_inputs = th.Tensor([1, 0]) if agent_idx == 0 or agent_idx == 1 else th.Tensor([0, 1])
+        inputs['flat_inputs'].append(id_inputs)
 
         inputs['flat_inputs'] = th.cat([th.Tensor(x) for x in inputs['flat_inputs']]).unsqueeze(0)
+
+        inputs['id_inputs'] = id_inputs.unsqueeze(0)
         # print(inputs['board_inputs'].shape)
         # print(inputs['flat_inputs'].shape)
 
@@ -72,6 +76,8 @@ class TestMAC:
         }
         input_shape['flat_shape'] += 6
         input_shape['flat_shape'] += self.n_agents
+
+        input_shape['id_shape'] = self.n_agents
 
         return input_shape
 

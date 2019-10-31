@@ -4,11 +4,12 @@ import torch as th
 
 
 # This multi-agent controller shares parameters between agents
-class BasicMAC:
+class SeeIdMAC:
     def __init__(self, scheme, groups, args):
         self.n_agents = args.n_agents
         self.args = args
         input_shape = self._get_input_shape(scheme)
+        self.args.agent = 'see_id_agent'
         self._build_agents(input_shape)
         self.agent_output_type = args.agent_output_type
 
@@ -21,6 +22,7 @@ class BasicMAC:
         avail_actions = ep_batch["avail_actions"][:, t_ep]   # 当前回合的最后一步，即第 t_ep 步
         agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)  # 得到所有agent的动作
         chosen_actions = self.action_selector.select_action(agent_outputs[bs], avail_actions[bs], t_env, test_mode=test_mode)
+        print('chosen_actions:', chosen_actions)
         return chosen_actions
 
     def forward(self, ep_batch, t, test_mode=False):
@@ -95,6 +97,8 @@ class BasicMAC:
             inputs['flat_inputs'].append(
                 th.eye(self.n_agents, device=batch.device).unsqueeze(0).expand(bs, -1, -1)   # 得到 2 维数组
             )
+            inputs['id_inputs'] = th.eye(self.n_agents, device=batch.device)\
+                .unsqueeze(0).expand(bs, -1, -1).reshape(bs*self.n_agents, -1)
 
         # 得到 2 维数组，第一维是样本编号，一个样本编号代表一个智能体一步的特征
         inputs['flat_inputs'] = th.cat([x.reshape(bs*self.n_agents, -1) for x in inputs['flat_inputs']], dim=1)
@@ -104,6 +108,7 @@ class BasicMAC:
         input_shape = {
             'board_shape': scheme['board_obs']['vshape'],
             'flat_shape': scheme["flat_obs"]["vshape"],
+            'id_shape': self.n_agents
         }
         if self.args.obs_last_action:
             input_shape['flat_shape'] += scheme["actions_onehot"]["vshape"][0]

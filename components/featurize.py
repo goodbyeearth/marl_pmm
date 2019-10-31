@@ -122,7 +122,7 @@ def to_board_state(state, train_list):
             # 这个先后顺序是有意义的，一个是自己一个是队友，故输入必须有编号才能分辨该特征
             maps.append(board == i)
 
-    return np.stack(maps)    # todo: axis
+    return np.stack(maps)
 
 
 def get_board_state_size():
@@ -329,7 +329,7 @@ def to_agent_board_obs(obs):
     assert train_agent_idx is not None
     maps.append(board == train_agent_idx)              # 特征6，1层
 
-    return np.stack(maps)     # todo: axis
+    return np.stack(maps)
 
 
 def get_board_obs_size():
