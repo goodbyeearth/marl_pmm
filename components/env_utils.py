@@ -108,12 +108,3 @@ def check_move(obs, move):
         return 1
 
 
-# todo: 决定要不要保留
-# def seed(self):
-#     raise NotImplementedError
-
-# todo: 决定要不要保留
-# def save_replay(self):
-#     raise NotImplementedError
-
-

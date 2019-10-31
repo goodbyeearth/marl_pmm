@@ -1,2 +1,9 @@
-mac: "basic_mac" # Basic controller
+
+mac: "test_mac" # Basic controller
 env: "PommeRadioCompetition-v2" # Environment name
+
+n_episode: 10
+train_idx_list: [0, 2]
+
+load_agent_path: /home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-30_20-02-55/61789
+

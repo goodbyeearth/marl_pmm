@@ -36,13 +36,6 @@ class EpisodeRunner:
                                  preprocess=preprocess, device=self.args.device)
         self.mac = mac
 
-    # def get_env_info(self):
-    #     return env_utils.get_env_info()
-
-    # todo:决定要不要保留
-    # def save_replay(self):
-    #     self.env.save_replay()
-
     def close_env(self):
         self.env.close()
 

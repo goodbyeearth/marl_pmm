@@ -1,50 +1,64 @@
-from modules.agents import REGISTRY as agent_REGISTRY
-from components.action_selectors import REGISTRY as action_REGISTRY
-from components import env_utils, featurize
+import pommerman
+from pommerman import agents
+from controllers.test_controller import TestMAC
 import torch as th
+from components.featurize import *
 
-class MyMAC:
-    def __init__(self, scheme, args):
-        self.args = args
-        self.n_agents = args.n_agents
-        input_shape = self._get_input_shape(scheme)
-        self._build_agents(input_shape)
-        self.agent_output_type = args.agent_output_type
+def main():
+    # Print all possible environments in the Pommerman registry
+    print(pommerman.REGISTRY)
+    agent_list = [
+        agents.SimpleAgent(),
+        agents.SimpleAgent(),
+        # agents.DockerAgent("d9fc50459a6d", port=33333),
+        agents.SimpleAgent(),
+        agents.RandomAgent(),
+    ]
+    env = pommerman.make('PommeRadioCompetition-v2', agent_list)
+    env_info = {"board_state_shape": get_board_state_size(),
+                "flat_state_shape": get_flat_state_size(),
+                "board_obs_shape": get_board_obs_size(),
+                "flat_obs_shape": get_flat_obs_size(),
+                "n_actions": 6,
+                "n_agents": 2,
+                "episode_limit": 800}
+    scheme = {
+        "board_state": {"vshape": env_info["board_state_shape"]},
+        "flat_state": {"vshape": env_info["flat_state_shape"]},
+        "board_obs": {"vshape": env_info["board_obs_shape"], "group": "agents"},
+        "flat_obs": {"vshape": env_info["flat_obs_shape"], "group": "agents"},
+        "actions": {"vshape": (1,), "group": "agents", "dtype": th.long},
+        "avail_actions": {"vshape": (env_info["n_actions"],), "group": "agents", "dtype": th.int},
+        "reward": {"vshape": (1,)},
+        "terminated": {"vshape": (1,), "dtype": th.uint8},
+    }
+    rnn_hidden_dim = 256
+    mac = TestMAC(scheme=scheme, agent_output_type=None, rnn_hidden_dim=rnn_hidden_dim,
+                  model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-30_20-02-55/356/agent.th')
+    test_idx_list = [0, 2]
 
-        self.action_selector = action_REGISTRY[args.action_selector](args)
 
-        self.hidden_states = None
-        self.episode_start = True        # todo: 在每回合开始前设置
-        self.last_action =
+    n_episode = 400
+    for i_episode in range(n_episode):
+        obs = env.reset()
+        mac.last_action = [th.zeros(6), th.zeros(6)]
+        mac.init_hidden(1, rnn_hidden_dim)
+        done = False
+        frame = 0
+        print('env max step:', env._max_steps)
+        while not done:
+            actions = env.act(obs)
+            for idx, agent_idx in enumerate(test_idx_list):
+                action_agent = mac.select_actions(obs[agent_idx], idx).item()
+                temp = th.zeros(6)
+                temp[action_agent] = 1
+                mac.last_action[idx] = temp
+                actions[agent_idx] = action_agent
+            obs, reward, done, info = env.step(actions)
+            env.render()
 
-    def select_actions(self, obs, agent_idx):    # agent_idx: 0/1
-        avail_actions = env_utils.get_avail_agent_actions(obs)
-        agent_outputs = self.forward()
 
-    def forward(self):
-        pass
 
-    def _build_agents(self, input_shape):
-        self.agent = agent_REGISTRY[self.args.agent](input_shape, self.args)
 
-    def _build_inputs(self, obs, agent_idx):
-        board_obs = featurize.to_agent_board_obs(obs)  # todo: unsqueeze(0)
-        flat_obs = featurize.to_agent_flat_obs(obs)
-        inputs = {'board_inputs': board_obs, 'flat_inputs': [flat_obs]}
-
-        if self.args.obs_last_action:
-            if self.episode_start:
-                self.episode_start = False
-                inputs['flat_inputs'].append(th.zeros_like())
-
-    def _get_input_shape(self, scheme):
-        input_shape = {
-            'board_shape': scheme['board_obs']['vshape'],
-            'flat_shape': scheme["flat_obs"]["vshape"],
-        }
-        if self.args.obs_last_action:
-            input_shape['flat_shape'] += scheme["actions_onehot"]["vshape"][0]
-        if self.args.obs_agent_id:
-            input_shape['flat_shape'] += self.n_agents
-
-        return input_shape
+if __name__ == '__main__':
+    main()
