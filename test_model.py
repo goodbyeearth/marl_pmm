@@ -13,7 +13,7 @@ def main():
         agents.SimpleAgent(),
         # agents.DockerAgent("d9fc50459a6d", port=33333),
         agents.SimpleAgent(),
-        agents.RandomAgent(),
+        agents.SimpleAgent(),
     ]
     env = pommerman.make('PommeRadioCompetition-v2', agent_list)
     env_info = {"board_state_shape": get_board_state_size(),
@@ -36,7 +36,7 @@ def main():
     rnn_hidden_dim = 256
     # TODO 改
     mac = TestSeeIdMAC(scheme=scheme, agent_output_type="pi_logits", rnn_hidden_dim=rnn_hidden_dim,
-                  model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-31_21-57-01/15076/agent.th')
+                  model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-11-01_00-16-37/195281/agent.th')
     # mac = TestMAC(scheme=scheme, agent_output_type="pi_logits", rnn_hidden_dim=rnn_hidden_dim,
     #                    model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-31_20-10-35/199/agent.th')
     test_idx_list = [0, 2]

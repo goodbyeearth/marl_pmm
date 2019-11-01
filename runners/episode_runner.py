@@ -106,6 +106,8 @@ class EpisodeRunner:
             """ 进行reward shaping """
             for i in range(4):
                 if not is_dead[i] and not self.env._agents[i].is_alive:
+                    if i in self.train_idx_list:
+                        terminated = True
                     reward += reward_dead[i]
                     is_dead[i] = True
             for i, j in enumerate(self.train_idx_list):
