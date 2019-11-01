@@ -56,7 +56,7 @@ class EpisodeRunner:
         for i in self.train_idx_list:
             reward_dead[i] = -1
         reward_win = 0
-        reward_lay_bomb = 1
+        reward_lay_bomb = 4
         is_dead = [False for _ in range(4)]
 
         while not terminated:

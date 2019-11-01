@@ -1,7 +1,7 @@
 from modules.agents import REGISTRY as agent_REGISTRY
 from components import env_utils, featurize
 import torch as th
-
+from torch.distributions import Categorical
 
 class TestSeeIdMAC:
     def __init__(self, scheme, agent_output_type, model_load_path, rnn_hidden_dim):
@@ -27,7 +27,8 @@ class TestSeeIdMAC:
     def forward(self, obs, agent_idx):
         agent_inputs = self._build_inputs(obs, agent_idx)
         agent_out, self.hidden_states = self.agent(agent_inputs, self.hidden_states, self.rnn_hidden_dim)
-        print('agent_out:', agent_out)
+
+        # print('agent_out:', agent_out)
 
         if self.agent_output_type == "pi_logits":
             # if getattr(self.args, "mask_before_softmax", True):
@@ -89,5 +90,6 @@ def select(agent_input, avail_action):
 
     # print(masked_policies)
     picked_actions = masked_policies.max(1)[1]
+    # picked_actions = Categorical(masked_policies).sample().long()
     # print(picked_actions)
     return picked_actions

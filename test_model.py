@@ -35,10 +35,10 @@ def main():
     }
     rnn_hidden_dim = 256
     # TODO 改
-    mac = TestSeeIdMAC(scheme=scheme, agent_output_type="pi_logits", rnn_hidden_dim=rnn_hidden_dim,
-                  model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-11-01_00-16-37/195281/agent.th')
-    # mac = TestMAC(scheme=scheme, agent_output_type="pi_logits", rnn_hidden_dim=rnn_hidden_dim,
-    #                    model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-31_20-10-35/199/agent.th')
+    # mac = TestSeeIdMAC(scheme=scheme, agent_output_type="pi_logits", rnn_hidden_dim=rnn_hidden_dim,
+    #               model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-11-01_11-39-31/5016/agent.th')
+    mac = TestMAC(scheme=scheme, agent_output_type="pi_logits", rnn_hidden_dim=rnn_hidden_dim,
+                       model_load_path='/home/hiogdong/pymarl_pmm/results/models/coma_pmm__2019-10-31_20-10-35/199/agent.th')
     test_idx_list = [0, 2]
 
 
@@ -52,6 +52,10 @@ def main():
             actions = env.act(obs)
             for idx, agent_idx in enumerate(test_idx_list):
                 action_agent = mac.select_actions(obs[agent_idx], idx).item()
+                # if idx == 1:
+                #     print('2:', action_agent)
+                # else:
+                #     print('1:', action_agent)
                 temp = th.zeros(6)
                 temp[action_agent] = 1
                 mac.last_action[idx] = temp

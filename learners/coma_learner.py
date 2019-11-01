@@ -20,8 +20,8 @@ class COMALearner:
 
         self.log_stats_t = -self.args.learner_log_interval - 1
 
-        # self.critic = COMACritic(scheme, args)
-        self.critic = SeeIDCritic(scheme, args)    # todo 改了
+        self.critic = COMACritic(scheme, args)
+        # self.critic = SeeIDCritic(scheme, args)    # todo 改了
 
         self.target_critic = copy.deepcopy(self.critic)
 

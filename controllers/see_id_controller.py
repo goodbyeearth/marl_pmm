@@ -22,14 +22,15 @@ class SeeIdMAC:
         avail_actions = ep_batch["avail_actions"][:, t_ep]   # 当前回合的最后一步，即第 t_ep 步
         agent_outputs = self.forward(ep_batch, t_ep, test_mode=test_mode)  # 得到所有agent的动作
         chosen_actions = self.action_selector.select_action(agent_outputs[bs], avail_actions[bs], t_env, test_mode=test_mode)
-        print('chosen_actions:', chosen_actions)
+        # print('chosen_actions:', chosen_actions)
         return chosen_actions
 
     def forward(self, ep_batch, t, test_mode=False):
         agent_inputs = self._build_inputs(ep_batch, t)
         avail_actions = ep_batch["avail_actions"][:, t]
         agent_outs, self.hidden_states = self.agent(agent_inputs, self.hidden_states, self.args.rnn_hidden_dim)
-
+        # print('=========================')
+        # print('agent_outs:', agent_outs)
         # Softmax the agent outputs if they're policy logits
         if self.agent_output_type == "pi_logits":
 
@@ -83,7 +84,11 @@ class SeeIdMAC:
         # Other MACs might want to e.g. delegate building inputs to each agent
         bs = batch.batch_size
 
+        # print('=========================================')
+        # print('before reshape, board_obs:', batch['board_obs'][:, t].shape)
         board_obs = batch['board_obs'][:, t].reshape((bs*self.n_agents, ) + batch['board_obs'][:, t].shape[2:])
+        # print('after reshape, board_obs:', board_obs.shape)
+        # print(board_obs[0] == board_obs[1])
 
         inputs = {'board_inputs': board_obs, 'flat_inputs': [batch['flat_obs'][:, t]]}
 
