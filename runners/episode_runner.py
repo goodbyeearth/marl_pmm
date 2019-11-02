@@ -5,6 +5,8 @@ from components.episode_buffer import EpisodeBatch
 
 from components.featurize import *
 
+import torch as th
+
 
 class EpisodeRunner:
 
@@ -76,8 +78,9 @@ class EpisodeRunner:
 
             # Pass the entire batch of experiences up till now to the agents
             # Receive the actions for each agent at this timestep in a batch of size 1
-            agent_actions = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env, test_mode=test_mode)
-            # print(agent_actions)
+            agent_actions_1, agent_actions_2 = self.mac.select_actions(self.batch, t_ep=self.t, t_env=self.t_env,
+                                                                       test_mode=test_mode)
+            agent_actions = th.cat([agent_actions_1, agent_actions_2]).unsqueeze(0)
             # todo: action 加信息
             # todo: 死了的话动作处理
             # 替换 all_actions 中我方智能体的动作

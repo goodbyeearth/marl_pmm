@@ -22,65 +22,122 @@ class COMALearner:
         self.critic = COMACritic(scheme, args)
         self.target_critic = copy.deepcopy(self.critic)
 
-        self.agent_params = list(mac.parameters())
+        self.agent_params_1 = list(mac.parameters()[0])
+        self.agent_params_2 = list(mac.parameters()[1])
         self.critic_params = list(self.critic.parameters())
-        self.params = self.agent_params + self.critic_params
+        self.params = self.agent_params_1 + self.agent_params_2 + self.critic_params
 
-        self.agent_optimiser = RMSprop(params=self.agent_params, lr=args.lr, alpha=args.optim_alpha, eps=args.optim_eps)
-        self.critic_optimiser = RMSprop(params=self.critic_params, lr=args.critic_lr, alpha=args.optim_alpha, eps=args.optim_eps)
+        self.agent_optimiser_1 = RMSprop(params=self.agent_params_1, lr=args.lr, alpha=args.optim_alpha,
+                                         eps=args.optim_eps)
+        self.agent_optimiser_2 = RMSprop(params=self.agent_params_2, lr=args.lr, alpha=args.optim_alpha,
+                                         eps=args.optim_eps)
+        self.critic_optimiser = RMSprop(params=self.critic_params, lr=args.critic_lr, alpha=args.optim_alpha,
+                                        eps=args.optim_eps)
 
     def train(self, batch: EpisodeBatch, t_env: int, episode_num: int):
         # Get the relevant quantities
         bs = batch.batch_size
         max_t = batch.max_seq_length
+        # print('batch flat_obs shape: ', batch['flat_obs'].shape)
+
         rewards = batch["reward"][:, :-1]
+        # print('reawrd shape:', rewards.shape)
+
         actions = batch["actions"][:, :]
+        # print('actions shape:', actions.shape)
+
         terminated = batch["terminated"][:, :-1].float()
+        # print('terminated shape:', terminated.shape)
+
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
+        # print('mask shape:', mask.shape)
+
         avail_actions = batch["avail_actions"][:, :-1]
+        avail_actions_1 = avail_actions[:, :, 0, :].unsqueeze(2)
+        avail_actions_2 = avail_actions[:, :, 1, :].unsqueeze(2)
+        # print('avail actions shape:', avail_actions.shape)
 
         critic_mask = mask.clone()
 
-        mask = mask.repeat(1, 1, self.n_agents).view(-1)
+        # print('after repeating, mask shape:', mask.repeat(1, 1, self.n_agents).shape)
+        # mask = mask.repeat(1, 1, self.n_agents).view(-1)
+        mask = mask.view(-1)
+        # print('after view, mask shape:', mask.shape)
 
         q_vals, critic_train_stats = self._train_critic(batch, rewards, terminated, actions, avail_actions,
                                                         critic_mask, bs, max_t)
+        q_vals_1 = q_vals[:, :, 0, :].unsqueeze(2)
+        q_vals_2 = q_vals[:, :, 1, :].unsqueeze(2)
+        # print('q_vals shape:', q_vals.shape)
+        # print('q_vals_1 shape:', q_vals_1.shape)
+        # print('len of critic loss in critic_train_stats:', len(critic_train_stats['critic_loss']))
 
         actions = actions[:,:-1]
+        actions_1 = actions[:, :, 0, :].unsqueeze(2)
+        actions_2 = actions[:, :, 1, :].unsqueeze(2)
+        # print('actions shape:', actions.shape)
+        # print('actions_1 shape:', actions_1.shape)
 
-        mac_out = []
+
+        mac_out_1 = []
+        mac_out_2 = []
         self.mac.init_hidden(batch.batch_size)
         for t in range(batch.max_seq_length - 1):
-            agent_outs = self.mac.forward(batch, t=t)
-            mac_out.append(agent_outs)
-        mac_out = th.stack(mac_out, dim=1)  # Concat over time
+            agent_outs_1, agent_outs_2 = self.mac.forward(batch, t=t)
+            mac_out_1.append(agent_outs_1)
+            mac_out_2.append(agent_outs_2)
+        mac_out_1 = th.stack(mac_out_1, dim=1)  # Concat over time
+        mac_out_2 = th.stack(mac_out_2, dim=1)  # Concat over time
 
         # Mask out unavailable actions, renormalise (as in action selection)
-        mac_out[avail_actions == 0] = 0
-        mac_out = mac_out/mac_out.sum(dim=-1, keepdim=True)
-        mac_out[avail_actions == 0] = 0
+        mac_out_1[avail_actions_1 == 0] = 0
+        mac_out_1 = mac_out_1/mac_out_1.sum(dim=-1, keepdim=True)
+        mac_out_1[avail_actions_1 == 0] = 0
+
+        mac_out_2[avail_actions_2 == 0] = 0
+        mac_out_2 = mac_out_2 / mac_out_2.sum(dim=-1, keepdim=True)
+        mac_out_2[avail_actions_2 == 0] = 0
+        # print('mac_out_1:', mac_out_1.shape)
+        # print('mac_out_2:', mac_out_2.shape)
 
         # Calculated baseline
-        q_vals = q_vals.reshape(-1, self.n_actions)
-        pi = mac_out.view(-1, self.n_actions)
-        baseline = (pi * q_vals).sum(-1).detach()
+        q_vals_1 = q_vals_1.reshape(-1, self.n_actions)
+        q_vals_2 = q_vals_2.reshape(-1, self.n_actions)
+        # print('after reshaping, q_vals_1 shape:', q_vals_1.shape)
+
+        pi_1 = mac_out_1.view(-1, self.n_actions)
+        baseline_1 = (pi_1 * q_vals_1).sum(-1).detach()
+        pi_2 = mac_out_2.view(-1, self.n_actions)
+        baseline_2 = (pi_2 * q_vals_2).sum(-1).detach()
+        # print('pi_1 shape:', pi_1.shape)
+        # print('baseline_1 shape:', baseline_1.shape)
 
         # Calculate policy grad with mask
-        q_taken = th.gather(q_vals, dim=1, index=actions.reshape(-1, 1)).squeeze(1)
-        pi_taken = th.gather(pi, dim=1, index=actions.reshape(-1, 1)).squeeze(1)
-        pi_taken[mask == 0] = 1.0
-        log_pi_taken = th.log(pi_taken)
+        q_taken_1 = th.gather(q_vals_1, dim=1, index=actions_1.reshape(-1, 1)).squeeze(1)
+        pi_taken_1 = th.gather(pi_1, dim=1, index=actions_1.reshape(-1, 1)).squeeze(1)
+        pi_taken_1[mask == 0] = 1.0
+        log_pi_taken_1 = th.log(pi_taken_1)
+        q_taken_2 = th.gather(q_vals_2, dim=1, index=actions_2.reshape(-1, 1)).squeeze(1)
+        pi_taken_2 = th.gather(pi_2, dim=1, index=actions_2.reshape(-1, 1)).squeeze(1)
+        pi_taken_2[mask == 0] = 1.0
+        log_pi_taken_2 = th.log(pi_taken_2)
 
-        advantages = (q_taken - baseline).detach()
+        advantages_1 = (q_taken_1 - baseline_1).detach()
+        advantages_2 = (q_taken_2 - baseline_2).detach()
 
-        coma_loss = - ((advantages * log_pi_taken) * mask).sum() / mask.sum()
+        coma_loss_1 = - ((advantages_1 * log_pi_taken_1) * mask).sum() / mask.sum()
+        coma_loss_2 = - ((advantages_2 * log_pi_taken_2) * mask).sum() / mask.sum()
 
         # Optimise agents
-        self.agent_optimiser.zero_grad()
-        coma_loss.backward()
-        grad_norm = th.nn.utils.clip_grad_norm_(self.agent_params, self.args.grad_norm_clip)
-        self.agent_optimiser.step()
+        self.agent_optimiser_1.zero_grad()
+        self.agent_optimiser_2.zero_grad()
+        coma_loss_1.backward()
+        coma_loss_2.backward()
+        grad_norm_1 = th.nn.utils.clip_grad_norm_(self.agent_params_1, self.args.grad_norm_clip)
+        grad_norm_2 = th.nn.utils.clip_grad_norm_(self.agent_params_2, self.args.grad_norm_clip)
+        self.agent_optimiser_1.step()
+        self.agent_optimiser_2.step()
 
         if (self.critic_training_steps - self.last_target_update_step) / self.args.target_update_interval >= 1.0:
             self._update_targets()
@@ -91,10 +148,14 @@ class COMALearner:
             for key in ["critic_loss", "critic_grad_norm", "td_error_abs", "q_taken_mean", "target_mean"]:
                 self.logger.log_stat(key, sum(critic_train_stats[key])/ts_logged, t_env)
 
-            self.logger.log_stat("advantage_mean", (advantages * mask).sum().item() / mask.sum().item(), t_env)
-            self.logger.log_stat("coma_loss", coma_loss.item(), t_env)
-            self.logger.log_stat("agent_grad_norm", grad_norm, t_env)
-            self.logger.log_stat("pi_max", (pi.max(dim=1)[0] * mask).sum().item() / mask.sum().item(), t_env)
+            self.logger.log_stat("advantage_mean_1", (advantages_1 * mask).sum().item() / mask.sum().item(), t_env)
+            self.logger.log_stat("advantage_mean_2", (advantages_2 * mask).sum().item() / mask.sum().item(), t_env)
+            self.logger.log_stat("coma_loss_1", coma_loss_1.item(), t_env)
+            self.logger.log_stat("coma_loss_2", coma_loss_2.item(), t_env)
+            self.logger.log_stat("agent_grad_norm_1", grad_norm_1, t_env)
+            self.logger.log_stat("agent_grad_norm_2", grad_norm_2, t_env)
+            self.logger.log_stat("pi_max_1", (pi_1.max(dim=1)[0] * mask).sum().item() / mask.sum().item(), t_env)
+            self.logger.log_stat("pi_max_2", (pi_2.max(dim=1)[0] * mask).sum().item() / mask.sum().item(), t_env)
             self.log_stats_t = t_env
 
     def _train_critic(self, batch, rewards, terminated, actions, avail_actions, mask, bs, max_t):
@@ -161,7 +222,8 @@ class COMALearner:
     def save_models(self, path):
         self.mac.save_models(path)
         th.save(self.critic.state_dict(), "{}/critic.th".format(path))
-        th.save(self.agent_optimiser.state_dict(), "{}/agent_opt.th".format(path))
+        th.save(self.agent_optimiser_1.state_dict(), "{}/agent_opt_1.th".format(path))
+        th.save(self.agent_optimiser_2.state_dict(), "{}/agent_opt_2.th".format(path))
         th.save(self.critic_optimiser.state_dict(), "{}/critic_opt.th".format(path))
 
     def load_models(self, path):
@@ -169,5 +231,8 @@ class COMALearner:
         self.critic.load_state_dict(th.load("{}/critic.th".format(path), map_location=lambda storage, loc: storage))
         # Not quite right but I don't want to save target networks
         self.target_critic.load_state_dict(self.critic.state_dict())
-        self.agent_optimiser.load_state_dict(th.load("{}/agent_opt.th".format(path), map_location=lambda storage, loc: storage))
+        self.agent_optimiser_1.load_state_dict(
+            th.load("{}/agent_opt_1.th".format(path), map_location=lambda storage, loc: storage))
+        self.agent_optimiser_2.load_state_dict(
+            th.load("{}/agent_opt_2.th".format(path), map_location=lambda storage, loc: storage))
         self.critic_optimiser.load_state_dict(th.load("{}/critic_opt.th".format(path), map_location=lambda storage, loc: storage))
